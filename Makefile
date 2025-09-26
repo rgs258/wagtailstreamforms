@@ -7,12 +7,15 @@ install:
 test:
 	DJANGO_SETTINGS_MODULE=tests.settings ./manage.py test
 
+retest:
+	py.test --nomigrations --reuse-db --lf --ignore=tests/functional tests/
+
 docs:
 	$(MAKE) -C docs html
 
 format:
-	isort --recursive wagtailstreamforms tests
-	black wagtailstreamforms/ tests/
+	ruff check --fix --select I wagtailstreamforms/ tests/
+	ruff format wagtailstreamforms/ tests/
 
 #
 # Utility

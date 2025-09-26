@@ -1,6 +1,7 @@
 import os
 import re
 
+import wagtail
 from django.urls import reverse_lazy
 
 SECRET_KEY = "secret"
@@ -25,8 +26,8 @@ INSTALLED_APPS = [
     "wagtail.contrib.redirects",
     "wagtail.contrib.forms",
     "wagtail.sites",
-    "wagtail_modeladmin",
     "wagtail.contrib.settings",
+    "wagtail_modeladmin",
     "taggit",
     "wagtailstreamforms",
     "tests",
@@ -51,7 +52,18 @@ DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "testdb
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            # Standard template locations
+            os.path.join(os.path.dirname(wagtail.__file__), "admin", "templates"),
+            # For modeladmin in Wagtail 6.0+
+            os.path.join(
+                os.path.dirname(os.path.dirname(wagtail.__file__)),
+                "wagtail_modeladmin",
+                "templates",
+            ),
+            # Fallback locations
+            os.path.dirname(os.path.dirname(wagtail.__file__)),
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

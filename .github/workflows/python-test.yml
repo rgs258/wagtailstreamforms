@@ -6,35 +6,44 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: 3.11
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox
+        run: uv pip install --system tox
       - name: Validate formatting
-        run: tox -e format
+        run: uv run tox -e format
 
   test:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: ["3.12"]
         tox_env:
-          - py312-dj51-wt63
+          - py311-dj42-wt60
+          - py311-dj42-wt62
+          - py311-dj42-wt64
+        include:
+          - python-version: "3.11"
+            tox_env: py311-dj42-wt60
+          - python-version: "3.11"
+            tox_env: py311-dj42-wt62
+          - python-version: "3.11"
+            tox_env: py311-dj42-wt64
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox tox-gh-actions
-      - name: Run tests with tox
-        run: tox -e ${{ matrix.tox_env }} -- index-url=https://pypi.python.org/simple/
+        run: uv pip install --system tox tox-gh-actions
+      - name: Test with tox
+        run: uv run tox -e ${{ matrix.tox_env }} -- --index-url=https://pypi.python.org/simple/

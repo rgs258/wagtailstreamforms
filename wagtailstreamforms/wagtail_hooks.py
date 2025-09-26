@@ -4,13 +4,18 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import include, path, reverse
 from django.utils.translation import gettext_lazy as _
+from generic_chooser.views import ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser
 from wagtail import hooks
 from wagtail.admin import messages as wagtail_messages
-from wagtail.admin.viewsets.chooser import ChooserViewSet
-from wagtail.admin.widgets import BaseChooser
 from wagtail_modeladmin.helpers import AdminURLHelper, ButtonHelper
 from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
-from wagtail_modeladmin.views import CreateView, DeleteView, EditView, InspectView
+from wagtail_modeladmin.views import (
+    CreateView,
+    DeleteView,
+    EditView,
+    InspectView,
+)
 
 from wagtailstreamforms import hooks as form_hooks
 from wagtailstreamforms.conf import get_setting
@@ -139,6 +144,7 @@ class FormModelAdmin(ModelAdmin):
     edit_view_class = EditFormView
     delete_view_class = DeleteFormView
     url_helper_class = FormURLHelper
+    index_template_name = "modeladmin/index.html"
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -226,24 +232,25 @@ def process_form(page, request, *args, **kwargs):
                 )
 
 
-class WagtailStreamFormsChooserViewSet(ChooserViewSet):
+class WagtailStreamFormsChooserViewSet(ModelChooserViewSet):
     icon = "form"
     model = Form
     page_title = _("Choose a form")
     per_page = 10
 
 
-class WagtailStreamFormsChooser(BaseChooser):
-    icon = "form"
-    model = Form
+class WagtailStreamFormsChooser(AdminChooser):
     choose_one_text = _("Choose a form")
     choose_another_text = _("Choose another form")
     link_to_chosen_text = _("Edit this form")
-    chooser_modal_url_name = "wagtailstreamforms_chooser:choose"
+    model = Form
+    choose_modal_url_name = "wagtailstreamforms_chooser:choose"
+    icon = "form"
+    template = "generic_chooser/widgets/chooser.html"
 
 
 @hooks.register("register_admin_viewset")
-def register_wagtailstreamforms_chooser_viewset():
+def register_wagtailstreamforms_chooser_viewset() -> WagtailStreamFormsChooserViewSet:
     return WagtailStreamFormsChooserViewSet(
         "wagtailstreamforms_chooser", url_prefix="wagtailstreamforms-chooser"
     )
