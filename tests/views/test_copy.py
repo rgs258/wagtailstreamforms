@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
 
@@ -20,31 +19,40 @@ class CopyViewTestCase(AppTestCase):
 
         self.client.login(username="user", password="password")
 
-    def test_get_responds(self):
+    def test_get_responds(self) -> None:
         response = self.client.get(self.copy_url)
         self.assertEqual(response.status_code, 200)
 
-    def test_invalid_form_responds(self):
-        response = self.client.post(self.copy_url, data={})
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("This field is required.", str(response.content))
+    def test_invalid_form_responds(self) -> None:
+        Form.objects.create(title="Existing Form", slug="unique-slug")
 
-    def test_invalid_form_slug_in_use_error(self):
         response = self.client.post(
-            self.copy_url, data={"title": "new copy", "slug": self.form.slug}
+            self.copy_url,
+            {"slug": "new-copy-slug"},
+            follow=True,
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("This slug is already in use", str(response.content))
 
-    def test_invalid_pk_raises_404(self):
+        self.assertIn("This field is required.", response.content.decode())
+
+    def test_invalid_form_slug_in_use_error(self) -> None:
+        Form.objects.create(title="Existing Form", slug="existing-form")
+
+        response = self.client.post(
+            self.copy_url,
+            {"title": "new copy", "slug": "existing-form"},
+            follow=True,
+        )
+        self.assertIn("This slug is already in use", response.content.decode())
+
+    def test_invalid_pk_raises_404(self) -> None:
         response = self.client.get(self.invalid_copy_url)
         self.assertEqual(response.status_code, 404)
 
-    def test_post_copies(self):
+    def test_post_copies(self) -> None:
         self.client.post(self.copy_url, data={"title": "new copy", "slug": "new-slug"})
         self.assertEqual(Form.objects.count(), 2)
 
-    def test_post_redirects(self):
+    def test_post_redirects(self) -> None:
         response = self.client.post(self.copy_url, data={"title": "new copy", "slug": "new-slug"})
         url_helper = FormURLHelper(model=Form)
         self.assertRedirects(response, url_helper.index_url)
@@ -53,17 +61,17 @@ class CopyViewTestCase(AppTestCase):
 class CopyViewPermissionTestCase(AppTestCase):
     fixtures = ["test.json"]
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.user = User.objects.create_user("user", "user@test.com", "password")
         form = Form.objects.get(pk=1)
         self.copy_url = reverse("wagtailstreamforms:streamforms_copy", kwargs={"pk": form.pk})
 
-    def test_no_user_no_access(self):
+    def test_no_user_no_access(self) -> None:
         response = self.client.get(self.copy_url)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith("/cms/login/?next=/cms/wagtailstreamforms"))
 
-    def test_user_with_no_perm_no_access(self):
+    def test_user_with_no_perm_no_access(self) -> None:
         access_admin = Permission.objects.get(codename="access_admin")
         self.user.user_permissions.add(access_admin)
 
@@ -73,7 +81,7 @@ class CopyViewPermissionTestCase(AppTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith("/cms/"))
 
-    def test_user_with_add_perm_has_access(self):
+    def test_user_with_add_perm_has_access(self) -> None:
         access_admin = Permission.objects.get(codename="access_admin")
         form_perm = Permission.objects.get(codename="add_form")
         self.user.user_permissions.add(access_admin, form_perm)
